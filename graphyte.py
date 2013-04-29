@@ -35,7 +35,10 @@ def request(params):
     except:
         raise
 
-    graphiteData = pickle.loads(reqData.content)
+    try:
+        graphiteData = pickle.loads(reqData.content)
+    except:
+        raise
     return getDataFrame(graphiteData)
 
 def getDataFrame(rawData, resample=None, how='sum'):
