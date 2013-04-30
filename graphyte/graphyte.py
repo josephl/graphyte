@@ -25,7 +25,10 @@ from ConfigParser import SafeConfigParser
 
 def request(host, cert=None, **kwargs):
     """Perform request to Graphite Render API and return
-    Datetimestamped Pandas DataFrame."""
+    Datetimestamped Pandas DataFrame.
+    host:   graphite host render URL, i.e. 'http://graphite.example.com/render'.
+    cert:   ssl cert file.
+    kwargs: render API URL query parameters"""
     # Parse params
     options = parseRequestParams(**kwargs)
 
