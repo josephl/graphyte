@@ -76,9 +76,9 @@ def getDataFrame(rawData, resample=None, how='sum'):
     return df
 
 def parseRequestParams(**kwargs):
-    if kwargs['from'] is None:
+    if kwargs.has_key('from') and kwargs['from'] is None:
         kwargs.pop('from')
-    if kwargs['until'] is None:
+    if kwargs.has_key('until') and kwargs['until'] is None:
         kwargs.pop('until')
     kwargs.update({ 'format': 'pickle' })
 
