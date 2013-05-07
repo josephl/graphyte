@@ -120,7 +120,7 @@ def main():
 
     # Configuration
     config = SafeConfigParser()
-    config.read('graphyte.conf')
+    config.read('/opt/graphite/conf/graphyte.conf')
     host = config.get('graphite', 'host')
     if config.has_option('graphite', 'sslcert'):
         cert = config.get('graphite', 'sslcert')
