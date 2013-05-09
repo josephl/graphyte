@@ -75,8 +75,15 @@ def getDataFrame(rawData, resample=None, how='sum'):
         df = df.resample(resample, how=how)    
     elif len(set(freqs)) > 1:
         df = df.resample('%ds' % (max(freqs)), how=how)
-
     return df
+
+def plotData(df):
+    """Convert data values to simple list of lists for jsonification, 
+    plotting from pandas dataframes. returns column labels, value tuples."""
+    return {
+        'labels': df.columns.tolist(),
+        'values': df.values.tolist()
+        }
 
 def parseRequestParams(**kwargs):
     if kwargs.has_key('from') and kwargs['from'] is None:
