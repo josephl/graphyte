@@ -32,6 +32,8 @@ def request(host, cert=None, **kwargs):
     # Parse params
     options = parseRequestParams(**kwargs)
 
+    host = host + '/render'
+
     # Perform request
     try:
         if cert:
@@ -79,10 +81,17 @@ def getDataFrame(rawData, resample=None, how='sum'):
 
 def plotData(df):
     """Convert data values to simple list of lists for jsonification, 
-    plotting from pandas dataframes. returns column labels, value tuples."""
+    plotting from pandas timeseries dataframes.
+    returns column labels, value tuples."""
+    values = []
+    df.fillna(0.0, inplace=True)
+    timestamps = map(lambda x: int(x.to_datetime().strftime('%s')) * 1000,
+            df.index.tolist())
+    for col in df.columns:
+        values.append(zip(timestamps, df[col].tolist()))
     return {
         'labels': df.columns.tolist(),
-        'values': df.values.tolist()
+        'values': values
         }
 
 def parseRequestParams(**kwargs):
@@ -134,7 +143,8 @@ def main():
     else:
         cert = None
 
-    print request(host, cert, **args.__dict__)
+    req = request(host, cert, **args.__dict__)
+    print plotData(req)
  
 
 if __name__ == '__main__':
