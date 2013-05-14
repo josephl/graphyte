@@ -17,7 +17,7 @@
 import requests
 import pickle
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, time
 from urllib import urlencode
 from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
@@ -29,10 +29,14 @@ def request(host, cert=None, **kwargs):
     host:   graphite host render URL, i.e. 'http://graphite.example.com/render'.
     cert:   ssl cert file.
     kwargs: render API URL query parameters"""
+    # Extract non-graphite API options
+    timeOptions = getTimeOptions(**kwargs)
+
     # Parse params
     options = parseRequestParams(**kwargs)
 
-    host = host + '/render'
+    if not host.endswith('/render'):
+        host = host.rstrip('/') + '/render'
 
     # Perform request
     try:
@@ -50,7 +54,18 @@ def request(host, cert=None, **kwargs):
     except:
         raise
 
-    return getDataFrame(graphiteData)
+    df = getDataFrame(graphiteData)
+
+    # perform timeseries operations
+    if 'resampleFreq' in timeOptions:
+        df = resample(df, timeOptions['resampleFreq'],
+                timeOptions['resampleMethod'])       
+    elif ('dayStart' in timeOptions and timeOptions['dayStart'] != 0 and
+            timeOptions['dayEnd'] != 0):
+        df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
+                timeOptions['resampleMethod'])
+
+    return df
 
 def getDataFrame(rawData, resample=None, how='sum'):
     """Return pandas.DataFrame containing graphite data.
@@ -79,29 +94,95 @@ def getDataFrame(rawData, resample=None, how='sum'):
         df = df.resample('%ds' % (max(freqs)), how=how)
     return df
 
-def plotData(df):
+def plotData(df, fill='ffill', drop=False):
     """Convert data values to simple list of lists for jsonification, 
     plotting from pandas timeseries dataframes.
     returns column labels, value tuples."""
     values = []
-    df.fillna(0.0, inplace=True)
-    timestamps = map(lambda x: int(x.to_datetime().strftime('%s')) * 1000,
-            df.index.tolist())
+    labels = []
+    stats = []
+    while len(df.columns) > 0:
+        series = df.pop(df.columns[0])
+        if drop:
+            series = series.dropna()
+        timestamp = map(lambda t: int(t.to_datetime().strftime('%s')) * 1000,
+                series.index.tolist())
+        seriesDict = {
+                'data': zip(timestamp, series.tolist()),
+                'label': series.name
+                }
+        values.append(seriesDict)
+        stats.append({
+            'sum': series.sum(),
+            'quartile': [series.quantile(0.25),
+                         series.quantile(0.5),
+                         series.quantile(0.75)],
+            'mean': series.mean()
+        })
+    return values, stats
+
+def statsData(df):
+    stats = []
     for col in df.columns:
-        values.append(zip(timestamps, df[col].tolist()))
-    return {
-        'labels': df.columns.tolist(),
-        'values': values
-        }
+        stats.append({
+            'sum': df[col].sum(),
+            'mean': df[col].mean(),
+            'quantile': df[col].quantile()
+        })
+    print stats
+    return stats
+
+
+def getTimeOptions(**kwargs):
+    """Extract non-graphite API options, return dict.
+    Valid options: resampleFreq, resampleMethod, 
+    dayStart, dayEnd."""
+    timeOptions = {}
+    if 'resampleFreq' in kwargs and kwargs['resampleFreq'] is not None:
+        timeOptions.update({ 'resampleFreq': kwargs.pop('resampleFreq') })
+        if 'resampleMethod' in kwargs:
+            timeOptions.update(
+                    { 'resampleMethod': kwargs.pop('resampleMethod') })
+        else:
+            timeOptions.update(
+                    { 'resampleMethod': 'mean' })
+    else:
+        if 'dayStart' in kwargs and kwargs['dayStart'] is not None:
+            timeOptions.update({
+                    'dayStart': int(kwargs.pop('dayStart')),
+                    'dayEnd': int(kwargs.pop('dayEnd'))
+                    })
+        if 'resampleMethod' in kwargs and kwargs['resampleMethod'] is not None:
+            timeOptions.update(
+                    { 'resampleMethod': kwargs.pop('resampleMethod') })
+        else:
+            timeOptions.update(
+                    { 'resampleMethod': 'mean' })
+    return timeOptions
+
+def resample(df, freq, method='mean'):
+    return df.resample(freq, how=method)
+
+def dayRange(df, dayStart, dayEnd, method='mean'):
+    """dayStart, dayEnd are 0-23 hour values in the day.
+    Automatically resampled to Daily."""
+    start = time(hour=dayStart)
+    end = time(hour=dayEnd)
+    indexes = df.index.indexer_between_time(start, end)
+    timeSelect = df.index[indexes]
+    df = df.ix[timeSelect]
+    df = df.resample('D', how=method)
+    df = df.dropna()
+    return df
 
 def parseRequestParams(**kwargs):
-    if kwargs.has_key('from') and kwargs['from'] is None:
-        kwargs.pop('from')
-    if kwargs.has_key('until') and kwargs['until'] is None:
-        kwargs.pop('until')
-    kwargs.update({ 'format': 'pickle' })
-
-    return urlencode(kwargs, doseq=True)
+    graphiteArgs = { 'target': kwargs['target'] }
+    if 'from' in kwargs and kwargs['from'] is not None:
+        graphiteArgs.update({ 'from': kwargs['from'] })
+    if 'until' in kwargs and kwargs['until'] is not None:
+        graphiteArgs.update({ 'until': kwargs['until'] })
+    graphiteArgs.update({ 'format': 'pickle' })
+    return urlencode(graphiteArgs, doseq=True)
 
 def lcm(nums, mult=None):
     if len(nums) > 0:
@@ -122,16 +203,20 @@ def gcd(a, b):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('target',
-                        metavar='METRIC',
-                        nargs='+',
-                        help='Graphite metric names')
-    parser.add_argument('--from',
-                        dest='from',
-                        required=False)
-    parser.add_argument('--until',
-                        dest='until',
-                        required=False)
+    parser.add_argument('target', metavar='METRIC', nargs='+',
+            help='Graphite metric names')
+    parser.add_argument('--from', dest='from',
+            required=False)
+    parser.add_argument('--until', dest='until',
+            required=False)
+    parser.add_argument('--resampleFreq', dest='resampleFreq',
+            required=False)
+    parser.add_argument('--resampleMethod', dest='resampleMethod',
+            required=False)
+    parser.add_argument('--dayStart', dest='dayStart', type=int,
+            required=False)
+    parser.add_argument('--dayEnd', dest='dayEnd', type=int,
+            required=False)
     args = parser.parse_args()
 
     # Configuration
@@ -144,7 +229,9 @@ def main():
         cert = None
 
     req = request(host, cert, **args.__dict__)
-    print plotData(req)
+    #dayRange(req)
+    reqData = plotData(req, 'ffill', True)
+    import pdb; pdb.set_trace()
  
 
 if __name__ == '__main__':
