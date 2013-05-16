@@ -131,16 +131,19 @@ def getStatObject(series):
     summ = series.sum()
     quartile = [series.quantile(0.25), series.quantile(0.5), series.quantile(0.75)]
     mean = series.mean()
+    var = series.var()
     if isnan(summ):
         return {
                 'sum': 0.0,
                 'quartile': [0.0, 0.0, 0.0],
-                'mean': 0.0
+                'mean': 0.0,
+                'var': 0.0
             }
     return {
             'sum': summ,
             'quartile': quartile,
-            'mean': mean
+            'mean': mean,
+            'var': var
         }
 
 def flotzip(timestamp, serieslist):
