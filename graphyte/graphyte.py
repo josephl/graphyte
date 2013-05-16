@@ -112,14 +112,36 @@ def plotData(df, fill='ffill', drop=False):
                 'label': series.name
                 }
         values.append(seriesDict)
-        stats.append({
-            'sum': series.sum(),
-            'quartile': [series.quantile(0.25),
-                         series.quantile(0.5),
-                         series.quantile(0.75)],
-            'mean': series.mean()
-        })
+        try:
+            #statObj = {
+            #        'sum': series.sum(),
+            #        'quartile': [series.quantile(0.25),
+            #                     series.quantile(0.5),
+            #                     series.quantile(0.75)],
+            #        'mean': series.mean()
+            #    }
+            stats.append(getStatObject(series))
+        except:
+            raise
     return values, stats
+
+def getStatObject(series):
+    from math import isnan
+    statObj = {}
+    summ = series.sum()
+    quartile = [series.quantile(0.25), series.quantile(0.5), series.quantile(0.75)]
+    mean = series.mean()
+    if isnan(summ):
+        return {
+                'sum': 0.0,
+                'quartile': [0.0, 0.0, 0.0],
+                'mean': 0.0
+            }
+    return {
+            'sum': summ,
+            'quartile': quartile,
+            'mean': mean
+        }
 
 def flotzip(timestamp, serieslist):
     """For flot uncontinuous lines, requires a 'null' placeholder in place of
@@ -129,10 +151,14 @@ def flotzip(timestamp, serieslist):
                        map(lambda x: None if x is None or isnan(x) else x,
                            serieslist))
     # trim leading null values
-    i = 0
-    while nulledSeries[i][1] == None:
-        i += 1
-    nulledSeries = nulledSeries[i:]
+    try:
+        i = 0
+        while i < len(nulledSeries) and nulledSeries[i][1] == None:
+            i += 1
+        nulledSeries = nulledSeries[i:]
+        print 'nulledSeries %d' % (len(nulledSeries))
+    except:
+        raise
     return nulledSeries
 
 
@@ -144,9 +170,7 @@ def statsData(df):
             'mean': df[col].mean(),
             'quantile': df[col].quantile()
         })
-    print stats
     return stats
-
 
 def getTimeOptions(**kwargs):
     """Extract non-graphite API options, return dict.
