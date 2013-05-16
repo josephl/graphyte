@@ -99,7 +99,6 @@ def plotData(df, fill='ffill', drop=False):
     plotting from pandas timeseries dataframes.
     returns column labels, value tuples."""
     values = []
-    labels = []
     stats = []
     while len(df.columns) > 0:
         series = df.pop(df.columns[0])
@@ -151,17 +150,6 @@ def flotzip(timestamp, serieslist):
     except:
         raise
     return nulledSeries
-
-
-def statsData(df):
-    stats = []
-    for col in df.columns:
-        stats.append({
-            'sum': df[col].sum(),
-            'mean': df[col].mean(),
-            'quantile': df[col].quantile()
-        })
-    return stats
 
 def getTimeOptions(**kwargs):
     """Extract non-graphite API options, return dict.

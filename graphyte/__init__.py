@@ -1,1 +1,1 @@
-from graphyte import request, plotData, statsData
+from graphyte import request, plotData
