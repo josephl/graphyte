@@ -103,8 +103,6 @@ def plotData(df, fill='ffill', drop=False):
     stats = []
     while len(df.columns) > 0:
         series = df.pop(df.columns[0])
-        #if drop:
-        #    series = series.dropna()
         timestamp = map(lambda t: int(t.to_datetime().strftime('%s')) * 1000,
                 series.index.tolist())
         seriesDict = {
@@ -112,17 +110,7 @@ def plotData(df, fill='ffill', drop=False):
                 'label': series.name
                 }
         values.append(seriesDict)
-        try:
-            #statObj = {
-            #        'sum': series.sum(),
-            #        'quartile': [series.quantile(0.25),
-            #                     series.quantile(0.5),
-            #                     series.quantile(0.75)],
-            #        'mean': series.mean()
-            #    }
-            stats.append(getStatObject(series))
-        except:
-            raise
+        stats.append(getStatObject(series))
     return values, stats
 
 def getStatObject(series):
