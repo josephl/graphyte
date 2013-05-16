@@ -103,12 +103,12 @@ def plotData(df, fill='ffill', drop=False):
     stats = []
     while len(df.columns) > 0:
         series = df.pop(df.columns[0])
-        if drop:
-            series = series.dropna()
+        #if drop:
+        #    series = series.dropna()
         timestamp = map(lambda t: int(t.to_datetime().strftime('%s')) * 1000,
                 series.index.tolist())
         seriesDict = {
-                'data': zip(timestamp, series.tolist()),
+                'data': flotzip(timestamp, series.tolist()),
                 'label': series.name
                 }
         values.append(seriesDict)
@@ -120,6 +120,21 @@ def plotData(df, fill='ffill', drop=False):
             'mean': series.mean()
         })
     return values, stats
+
+def flotzip(timestamp, serieslist):
+    """For flot uncontinuous lines, requires a 'null' placeholder in place of
+    a coordinate pair."""
+    from math import isnan
+    nulledSeries = zip(timestamp,
+                       map(lambda x: None if x is None or isnan(x) else x,
+                           serieslist))
+    # trim leading null values
+    i = 0
+    while nulledSeries[i][1] == None:
+        i += 1
+    nulledSeries = nulledSeries[i:]
+    return nulledSeries
+
 
 def statsData(df):
     stats = []
