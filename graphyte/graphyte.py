@@ -60,6 +60,12 @@ def request(host, cert=None, **kwargs):
     if 'resampleFreq' in timeOptions:
         df = resample(df, timeOptions['resampleFreq'],
                 timeOptions['resampleMethod'])       
+        print timeOptions
+        if ('dayStart' in timeOptions and timeOptions['dayStart'] != 0 and
+                timeOptions['dayEnd'] != 0):
+            print 'DAY RANGE'
+            df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
+                    timeOptions['resampleMethod'])
     elif ('dayStart' in timeOptions and timeOptions['dayStart'] != 0 and
             timeOptions['dayEnd'] != 0):
         df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
@@ -171,18 +177,18 @@ def getTimeOptions(**kwargs):
         else:
             timeOptions.update(
                     { 'resampleMethod': 'mean' })
+
+    if 'dayStart' in kwargs and kwargs['dayStart'] is not None:
+        timeOptions.update({
+                'dayStart': int(kwargs.pop('dayStart')),
+                'dayEnd': int(kwargs.pop('dayEnd'))
+                })
+    if 'resampleMethod' in kwargs and kwargs['resampleMethod'] is not None:
+        timeOptions.update(
+                { 'resampleMethod': kwargs.pop('resampleMethod') })
     else:
-        if 'dayStart' in kwargs and kwargs['dayStart'] is not None:
-            timeOptions.update({
-                    'dayStart': int(kwargs.pop('dayStart')),
-                    'dayEnd': int(kwargs.pop('dayEnd'))
-                    })
-        if 'resampleMethod' in kwargs and kwargs['resampleMethod'] is not None:
-            timeOptions.update(
-                    { 'resampleMethod': kwargs.pop('resampleMethod') })
-        else:
-            timeOptions.update(
-                    { 'resampleMethod': 'mean' })
+        timeOptions.update(
+                { 'resampleMethod': 'mean' })
     return timeOptions
 
 def resample(df, freq, method='mean'):
