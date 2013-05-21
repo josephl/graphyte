@@ -119,7 +119,10 @@ def getStatObject(series):
     quartile = [series.quantile(0.25), series.quantile(0.5), series.quantile(0.75)]
     mean = series.mean()
     var = series.var()
-    freq = series.index.freq.freqstr
+    if series.index.freq is not None:
+        freq = series.index.freq.freqstr
+    else:
+        freq = ''
     # empty dataset
     if isnan(summ):
         return {
@@ -186,15 +189,19 @@ def resample(df, freq, method='mean'):
     return df.resample(freq, how=method)
 
 def dayRange(df, dayStart, dayEnd, method='mean'):
-    """dayStart, dayEnd are 0-23 hour values in the day.
-    Automatically resampled to Daily."""
+    """dayStart, dayEnd are 0-23 hour values in the day."""
     start = time(hour=dayStart)
     end = time(hour=dayEnd)
     indexes = df.index.indexer_between_time(start, end)
-    timeSelect = df.index[indexes]
-    df = df.ix[timeSelect]
-    df = df.resample('D', how=method)
-    df = df.dropna()
+    noneTuple = (None,) * len(df.columns)
+    for i in xrange(len(df.index)):
+        if i not in indexes:
+            df.ix[i] = noneTuple
+    #import pdb; pdb.set_trace()
+    #timeSelect = df.index[indexes]
+    #df = df.ix[timeSelect]
+    #df = df.resample('D', how=method)
+    #df = df.dropna()
     return df
 
 def parseRequestParams(**kwargs):
