@@ -122,7 +122,13 @@ def getStatObject(series):
     from math import isnan
     statObj = {}
     summ = series.sum()
-    quartile = [series.quantile(0.25), series.quantile(0.5), series.quantile(0.75)]
+    quartile = [
+            series.quantile(0.0),
+            series.quantile(0.25),
+            series.quantile(0.5),
+            series.quantile(0.75,
+            series.quantile(1.0)
+            ]
     mean = series.mean()
     var = series.var()
     if series.index.freq is not None:
@@ -133,7 +139,7 @@ def getStatObject(series):
     if isnan(summ):
         return {
                 'sum': 0.0,
-                'quartile': [0.0, 0.0, 0.0],
+                'quartile': [0.0, 0.0, 0.0, 0.0, 0.0],
                 'mean': 0.0,
                 'var': 0.0,
                 'freq': freq
