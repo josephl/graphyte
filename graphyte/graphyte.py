@@ -58,16 +58,16 @@ def request(host, cert=None, **kwargs):
 
     # perform timeseries operations
     if 'resampleFreq' in timeOptions:
-        df = resample(df, timeOptions['resampleFreq'],
-                timeOptions['resampleMethod'])       
         print timeOptions
-        if ('dayStart' in timeOptions and timeOptions['dayStart'] != 0 and
-                timeOptions['dayEnd'] != 0):
+        if ('dayStart' in timeOptions and not (timeOptions['dayStart'] == 0 and
+                timeOptions['dayEnd'] == 0)):
             print 'DAY RANGE'
             df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
                     timeOptions['resampleMethod'])
-    elif ('dayStart' in timeOptions and timeOptions['dayStart'] != 0 and
-            timeOptions['dayEnd'] != 0):
+        df = resample(df, timeOptions['resampleFreq'],
+                timeOptions['resampleMethod'])       
+    elif ('dayStart' in timeOptions and not (timeOptions['dayStart'] == 0 and
+            timeOptions['dayEnd'] == 0)):
         df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
                 timeOptions['resampleMethod'])
 
@@ -126,7 +126,7 @@ def getStatObject(series):
             series.quantile(0.0),
             series.quantile(0.25),
             series.quantile(0.5),
-            series.quantile(0.75,
+            series.quantile(0.75),
             series.quantile(1.0)
             ]
     mean = series.mean()
@@ -141,14 +141,14 @@ def getStatObject(series):
                 'sum': 0.0,
                 'quartile': [0.0, 0.0, 0.0, 0.0, 0.0],
                 'mean': 0.0,
-                'var': 0.0,
+                'variance': 0.0,
                 'freq': freq
             }
     return {
             'sum': summ,
             'quartile': quartile,
             'mean': mean,
-            'var': var,
+            'variance': var,
             'freq': freq
         }
 
