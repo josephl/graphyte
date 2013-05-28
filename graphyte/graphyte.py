@@ -106,6 +106,7 @@ def plotData(df, fill='ffill', drop=False):
     returns column labels, value tuples."""
     values = []
     stats = []
+    corr = correlations(df)
     while len(df.columns) > 0:
         series = df.pop(df.columns[0])
         timestamp = map(lambda t: int(t.to_datetime().strftime('%s')) * 1000,
@@ -115,7 +116,12 @@ def plotData(df, fill='ffill', drop=False):
                 'label': series.name
                 }
         values.append(seriesDict)
-        stats.append(getStatObject(series))
+        seriesStat = getStatObject(series)
+        seriesStat.update({ 'corr': corr.pop(corr.columns[0]).values.tolist() })
+        stats.append(seriesStat)
+    # force diagonal to 1.0 (as NaN values are set to 0)
+    for i in xrange(0, len(stats)):
+        stats[i]['corr'][i] = 1.0
     return values, stats
 
 def getStatObject(series):
@@ -151,6 +157,9 @@ def getStatObject(series):
             'variance': var,
             'freq': freq
         }
+
+def correlations(df):
+    return df.corr().fillna(0.0)
 
 def flotzip(timestamp, serieslist):
     """For flot uncontinuous lines, requires a 'null' placeholder in place of
@@ -209,11 +218,6 @@ def dayRange(df, dayStart, dayEnd, method='mean'):
     for i in xrange(len(df.index)):
         if i not in indexes:
             df.ix[i] = noneTuple
-    #import pdb; pdb.set_trace()
-    #timeSelect = df.index[indexes]
-    #df = df.ix[timeSelect]
-    #df = df.resample('D', how=method)
-    #df = df.dropna()
     return df
 
 def parseRequestParams(**kwargs):
@@ -270,6 +274,7 @@ def main():
         cert = None
 
     req = request(host, cert, **args.__dict__)
+    import pdb; pdb.set_trace()
     #dayRange(req)
     reqData = plotData(req, 'ffill', True)
     import pdb; pdb.set_trace()
