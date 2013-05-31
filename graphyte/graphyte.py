@@ -54,7 +54,7 @@ def request(host, cert=None, **kwargs):
     except:
         raise
 
-    df = getDataFrame(graphiteData)
+    df = getDataframe(graphiteData)
 
     # perform timeseries operations
     if 'resampleFreq' in timeOptions:
@@ -73,7 +73,7 @@ def request(host, cert=None, **kwargs):
 
     return df
 
-def getDataFrame(rawData, resample=None, how='sum'):
+def getDataframe(rawData, resample=None, how='sum'):
     """Return pandas.DataFrame containing graphite data.
     resample: freq string for pandas dataframe."""
     # frequency is the least common multiple of steps
@@ -228,6 +228,10 @@ def parseRequestParams(**kwargs):
         graphiteArgs.update({ 'until': kwargs['until'] })
     graphiteArgs.update({ 'format': 'pickle' })
     return urlencode(graphiteArgs, doseq=True)
+
+def mergeAnalytics(graphiteDF, analyticsData):
+    """Merge analytics data into graphite data, using graphite data index."""
+    index = graphiteDF.index
 
 def lcm(nums, mult=None):
     if len(nums) > 0:
