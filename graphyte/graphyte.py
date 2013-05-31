@@ -229,9 +229,13 @@ def parseRequestParams(**kwargs):
     graphiteArgs.update({ 'format': 'pickle' })
     return urlencode(graphiteArgs, doseq=True)
 
-def mergeAnalytics(graphiteDF, analyticsData):
+def mergeAnalytics(graphiteDF, analyticsDF):
     """Merge analytics data into graphite data, using graphite data index."""
-    index = graphiteDF.index
+    for col in analyticsDF.columns:
+        trimmedADF = analyticsDF[col].ix[graphiteDF.index]
+        graphiteDF[col] = pd.Series(trimmedADF.values.tolist(),
+                                    index=graphiteDF.index)
+    return graphiteDF
 
 def lcm(nums, mult=None):
     if len(nums) > 0:
