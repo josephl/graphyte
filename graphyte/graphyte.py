@@ -64,8 +64,13 @@ def request(host, cert=None, **kwargs):
             print 'DAY RANGE'
             df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
                     timeOptions['resampleMethod'])
-        df = resample(df, timeOptions['resampleFreq'],
-                timeOptions['resampleMethod'])       
+
+        if 'resampleMethod' in timeOptions:
+            df = resample(df, timeOptions['resampleFreq'],
+                    timeOptions['resampleMethod'])       
+        else:
+            df = resample(df, timeOptions['resampleFreq'])       
+
     elif ('dayStart' in timeOptions and not (timeOptions['dayStart'] == 0 and
             timeOptions['dayEnd'] == 0)):
         df = dayRange(df, timeOptions['dayStart'], timeOptions['dayEnd'],
@@ -107,7 +112,7 @@ def plotData(df, fill='ffill', drop=False):
     values = []
     stats = []
     corr = correlations(df)
-    while len(df.columns) > 0:
+    while len(df.columns) > 0 and len(df.dropna()) > 0:
         series = df.pop(df.columns[0])
         timestamp = map(lambda t: int(t.to_datetime().strftime('%s')) * 1000,
                 series.index.tolist())
