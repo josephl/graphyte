@@ -57,7 +57,7 @@ def request(host, cert=None, **kwargs):
     df = getDataframe(graphiteData)
 
     # perform timeseries operations
-    if 'resampleFreq' in timeOptions:
+    if 'resampleFreq' in timeOptions and len(df.dropna()) > 0:
         print timeOptions
         if ('dayStart' in timeOptions and not (timeOptions['dayStart'] == 0 and
                 timeOptions['dayEnd'] == 0)):
